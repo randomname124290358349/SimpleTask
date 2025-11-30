@@ -2,7 +2,7 @@
 
 SimpleTask is a lightweight, local task management application designed for small teams and individual use.
 
-[🎥 Watch a demo video](demos/demo.mp4)
+![Demo](demos/demo.gif)
 
 > [!WARNING]
 >
@@ -46,4 +46,5 @@ SimpleTask is a lightweight, local task management application designed for smal
 - SQLite
 - OpenAI API
 - HTML/CSS/JS
+
 
