@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleTask</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="app-title">SimpleTask</div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" onclick="loadTasks('open'); setActive(this)">
+                    <span>📝</span> Open Tasks
+                </a>
+                <a href="#" class="nav-item" onclick="loadTasks('completed'); setActive(this)">
+                    <span>✅</span> Completed
+                </a>
+            </nav>
+
+            <div class="user-profile" id="user-info" style="display: none; align-items: center; gap: 12px;">
+                <div class="btn-icon" style="background: #e5e5ea;">👤</div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div id="display-name" style="font-weight: 600; font-size: 14px;">User</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Online</div>
+                </div>
+                <button class="btn-icon" onclick="logoutUser()"
+                    style="width: 28px; height: 28px; font-size: 14px; background: transparent; color: var(--text-secondary); cursor: pointer; border: none;"
+                    title="Logout">
+                    🔓
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h1 class="page-title">My Tasks</h1>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" placeholder="Search tasks..." oninput="handleSearch(this.value)"
+                        style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 14px;">
+                    <button class="btn btn-secondary" onclick="toggleDarkMode()" id="theme-toggle">🌙</button>
+                    <button class="btn" onclick="openCreateTaskModal()">
+                        <span>+</span> New Task
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-scroll">
+                <div id="task-list" class="task-grid">
+                    <!-- Tasks will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Identification Modal -->
+    <div id="id-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>Welcome</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Please enter your name to continue.</p>
+            <div class="input-group">
+                <input type="text" id="username-input" placeholder="Your Name">
+            </div>
+            <button class="btn" onclick="identifyUser()" style="width: 100%; padding: 12px;">Continue</button>
+        </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <div id="create-task-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>New Task</h2>
+            <div class="input-group">
+                <input type="text" id="task-title" placeholder="What needs to be done?">
+            </div>
+            <div class="input-group">
+                <textarea id="task-desc" placeholder="Description (optional)" rows="4"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
+                <button class="btn btn-secondary" onclick="closeCreateTaskModal()">Cancel</button>
+                <button class="btn" id="create-task-btn" onclick="createTask()">Create Task</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        function setActive(element) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // Update page title based on selection
+            const title = element.innerText.includes('Open') ? 'My Tasks' : 'Completed Tasks';
+            document.querySelector('.page-title').innerText = title;
+        }
+    </script>
+</body>
+
+</html>
