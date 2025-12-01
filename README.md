@@ -37,6 +37,10 @@ SimpleTask is a lightweight, local task management application designed for smal
     ```bash
     uv run .\app.py
     ```
+    or to start silenced and minimized
+    ```
+    uv run pythonw launch_as_system_tray.pyw
+    ```
     Access the app at `http://localhost:5000`.
     Access the application from other computers on your LAN at `http://<your-lan-ip>:5000` (check the console output for the IP).
 
@@ -46,5 +50,6 @@ SimpleTask is a lightweight, local task management application designed for smal
 - SQLite
 - OpenAI API
 - HTML/CSS/JS
+
 
 
