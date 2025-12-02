@@ -1181,6 +1181,201 @@ body.dark-mode .editable:hover {
     border: 1px solid var(--accent-color);
     border-radius: 6px;
     padding: 2px 6px;
+    background: var(--card-background);
+    padding: 12px 18px;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    max-width: 85%;
+    align-self: flex-start;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+body.dark-mode .message-bubble {
+    background: #2c2c2e;
+}
+
+.message.mine .message-bubble {
+    background: var(--accent-color);
+    color: white;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+    box-shadow: 0 1px 2px rgba(0, 113, 227, 0.3);
+}
+
+/* Message Actions */
+.message-actions {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    align-self: flex-end;
+    /* Align to right for my messages */
+    padding-right: 5px;
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+.action-link {
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-left: 10px;
+    font-weight: 500;
+}
+
+.action-link:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+/* Inputs */
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid transparent;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: var(--font-stack);
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode textarea {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    background: var(--card-background);
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    background: var(--card-background);
+    padding: 40px;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal h2 {
+    margin-top: 0;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.improving-message {
+    font-size: 13px;
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+/* Pulsing Animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.pulsing {
+    animation: pulse 1.5s infinite ease-in-out;
+    display: inline-block;
+}
+
+/* Editable Elements */
+.editable {
+    transition: background-color 0.2s;
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    /* Offset padding */
+    cursor: pointer;
+}
+
+.editable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .editable:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.editable-input {
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 2px 6px;
     margin: -2px -6px;
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
@@ -1188,4 +1383,94 @@ body.dark-mode .editable:hover {
 
 .input-group {
     margin-bottom: 20px;
+}
+
+/* View Toggle */
+.view-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+body.dark-mode .view-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.view-btn.active {
+    background: var(--card-background);
+    color: var(--accent-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .view-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+
+/* Task Table */
+.task-table-view {
+    display: block;
+    /* Override grid */
+}
+
+.task-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card-background);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.task-table th {
+    padding: 15px 20px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+body.dark-mode .task-table th {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    vertical-align: middle;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+body.dark-mode .task-table td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-table tr:last-child td {
+    border-bottom: none;
+}
+
+.task-table tr {
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.task-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .task-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
