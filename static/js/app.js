@@ -64,6 +64,41 @@ function logoutUser() {
     window.location.reload();
 }
 
+// --- AI Management ---
+
+let aiAvailable = false;
+
+async function checkAIConfig() {
+    try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        aiAvailable = data.ai_available;
+
+        if (aiAvailable) {
+            const containers = document.querySelectorAll('#ai-toggle-container');
+            containers.forEach(el => el.style.display = 'flex');
+
+            // Restore preference
+            const savedPref = localStorage.getItem('simpletask_use_ai');
+            const useAI = savedPref === null ? true : (savedPref === 'true');
+
+            document.querySelectorAll('#use-ai-toggle').forEach(el => el.checked = useAI);
+        }
+    } catch (e) {
+        console.error('Failed to check AI config', e);
+    }
+}
+
+function toggleAIPreference(enabled) {
+    localStorage.setItem('simpletask_use_ai', enabled);
+}
+
+function getAIPreference() {
+    if (!aiAvailable) return false;
+    const savedPref = localStorage.getItem('simpletask_use_ai');
+    return savedPref === null ? true : (savedPref === 'true');
+}
+
 // --- Task Management ---
 
 function openCreateTaskModal() {
@@ -89,13 +124,19 @@ async function createTask() {
     // UI Feedback
     const originalBtnText = createBtn.innerHTML;
     createBtn.disabled = true;
-    createBtn.innerHTML = '<span class="pulsing">✨</span> Improving & Creating...';
+
+    const useAI = getAIPreference();
+    if (useAI) {
+        createBtn.innerHTML = '<span class="pulsing">✨</span> Improving & Creating...';
+    } else {
+        createBtn.innerHTML = 'Creating...';
+    }
 
     try {
         const res = await fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description: desc })
+            body: JSON.stringify({ title, description: desc, use_ai: useAI })
         });
 
         if (res.ok) {
@@ -134,6 +175,34 @@ function getCurrentStatus() {
     return 'open';
 }
 
+// --- View Mode ---
+let currentViewMode = localStorage.getItem('simpletask_view_mode') || 'card';
+
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem('simpletask_view_mode', mode);
+
+    // Update UI
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick').includes(mode)) {
+            btn.classList.add('active');
+        }
+    });
+
+    loadTasks(getCurrentStatus());
+}
+
+function initViewMode() {
+    // Set initial active button
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick').includes(currentViewMode)) {
+            btn.classList.add('active');
+        }
+    });
+}
+
 async function loadTasks(status) {
     let url = `/api/tasks?status=${status}`;
     if (currentSearchQuery) {
@@ -146,32 +215,76 @@ async function loadTasks(status) {
     const list = document.getElementById('task-list');
     list.innerHTML = '';
 
+    // Update grid/table class
+    if (currentViewMode === 'table') {
+        list.classList.remove('task-grid');
+        list.classList.add('task-table-view');
+    } else {
+        list.classList.add('task-grid');
+        list.classList.remove('task-table-view');
+    }
+
     if (tasks.length === 0) {
         list.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No tasks found</div>';
         return;
     }
 
-    tasks.forEach(task => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.onclick = () => window.location.href = `/task/${task.id}`;
-
-        const date = parseUTCDate(task.created_at).toLocaleDateString();
-        const descPreview = task.description ? task.description : 'No description';
-
-        div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                <h3>${task.title}</h3>
-                <div class="status-badge status-${task.status}">${task.status}</div>
-            </div>
-            <p>${descPreview}</p>
-            <div class="card-footer">
-                <span>${task.created_by}</span>
-                <span>${date}</span>
-            </div>
+    if (currentViewMode === 'table') {
+        const table = document.createElement('table');
+        table.className = 'task-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Title</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
         `;
-        list.appendChild(div);
-    });
+        const tbody = table.querySelector('tbody');
+
+        tasks.forEach(task => {
+            const tr = document.createElement('tr');
+            tr.onclick = () => window.location.href = `/task/${task.id}`;
+            const date = parseUTCDate(task.created_at).toLocaleDateString();
+
+            tr.innerHTML = `
+                <td>
+                    <div style="font-weight: 600; color: var(--text-primary);">${task.title}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">${task.description ? task.description.substring(0, 50) + (task.description.length > 50 ? '...' : '') : ''}</div>
+                </td>
+                <td><span class="status-badge status-${task.status}">${task.status}</span></td>
+                <td>${task.created_by}</td>
+                <td>${date}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        list.appendChild(table);
+    } else {
+        tasks.forEach(task => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.onclick = () => window.location.href = `/task/${task.id}`;
+
+            const date = parseUTCDate(task.created_at).toLocaleDateString();
+            const descPreview = task.description ? task.description : 'No description';
+
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <h3>${task.title}</h3>
+                    <div class="status-badge status-${task.status}">${task.status}</div>
+                </div>
+                <p>${descPreview}</p>
+                <div class="card-footer">
+                    <span>${task.created_by}</span>
+                    <span>${date}</span>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
 }
 
 async function loadTaskDetails(id) {
@@ -413,11 +526,18 @@ async function sendMessage() {
 
     input.value = ''; // Clear immediately
 
-    // Add temporary "Improving message..." bubble
+    // Add temporary message bubble
     const list = document.getElementById('message-list');
     const tempDiv = document.createElement('div');
     tempDiv.id = 'pending-message';
     tempDiv.className = 'message mine';
+
+    const useAI = getAIPreference();
+    let tempContent = content;
+    if (useAI) {
+        tempContent = `<span class="pulsing">✨</span> Improving message with AI...`;
+    }
+
     tempDiv.innerHTML = `
         <div class="message-bubble">
             <div class="message-header">
@@ -425,7 +545,7 @@ async function sendMessage() {
                 <span>Now</span>
             </div>
             <div class="message-content improving-message">
-                <span class="pulsing">✨</span> Improving message with AI...
+                ${tempContent}
             </div>
         </div>
     `;
@@ -435,7 +555,7 @@ async function sendMessage() {
     await fetch(`/api/tasks/${TASK_ID}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content, use_ai: useAI })
     });
 
     // Remove pending message (loadMessages will refresh the list)
@@ -473,6 +593,16 @@ function deleteMessage(id) {
     openDeleteMsgModal(id);
 }
 
+function handleMessageEditKey(e, id) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const input = document.getElementById(`edit-input-${id}`);
+        if (input) input.blur();
+    } else if (e.key === 'Escape') {
+        cancelEdit(id);
+    }
+}
+
 function startEdit(id) {
     const contentEl = document.getElementById(`msg-content-${id}`);
     if (!contentEl) return;
@@ -487,13 +617,12 @@ function startEdit(id) {
     const currentWidth = contentEl.offsetWidth;
     contentEl.style.width = `${currentWidth}px`;
 
-    // Inline edit interface
+    // Inline edit interface - No buttons, just textarea
     contentEl.innerHTML = `
-        <textarea id="edit-input-${id}" class="edit-input" rows="2" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--accent-color); margin-bottom: 5px; font-family: inherit; font-size: inherit;">${currentContent}</textarea>
-        <div class="edit-actions" style="display: flex; gap: 5px; justify-content: flex-end;">
-            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onclick="cancelEdit(${id})">Cancel</button>
-            <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="saveEdit(${id})">Save</button>
-        </div>
+        <textarea id="edit-input-${id}" class="edit-input" rows="2" 
+            style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--accent-color); margin-bottom: 5px; font-family: inherit; font-size: inherit; resize: none;"
+            onblur="saveEdit(${id})"
+            onkeydown="handleMessageEditKey(event, ${id})">${currentContent}</textarea>
     `;
 
     // Focus textarea
@@ -516,25 +645,49 @@ function cancelEdit(id) {
 }
 
 async function saveEdit(id) {
-    const input = document.getElementById(`edit-input-${id}`);
-    if (!input) return;
+    // Small delay to prevent race conditions
+    setTimeout(async () => {
+        const input = document.getElementById(`edit-input-${id}`);
+        if (!input) return; // Already handled (e.g. cancelled)
 
-    const newContent = input.value.trim();
-    if (!newContent) return; // Or confirm delete?
+        const newContent = input.value.trim();
+        const originalContent = activeMessageEdits[id];
 
-    await fetch(`/api/messages/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newContent })
-    });
+        // If no change or empty, revert
+        if (!newContent || newContent === originalContent) {
+            cancelEdit(id);
+            return;
+        }
 
-    const contentEl = document.getElementById(`msg-content-${id}`);
-    if (contentEl) {
-        contentEl.style.width = ''; // Unlock width
-    }
+        // Optimistic update
+        const contentEl = document.getElementById(`msg-content-${id}`);
+        if (contentEl) {
+            contentEl.textContent = newContent;
+            contentEl.style.width = ''; // Unlock width
+        }
 
-    delete activeMessageEdits[id]; // Clear edit state
-    loadMessages(TASK_ID);
+        delete activeMessageEdits[id]; // Clear edit state
+
+        try {
+            const res = await fetch(`/api/messages/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newContent })
+            });
+
+            if (!res.ok) {
+                // Revert on failure
+                if (contentEl) contentEl.textContent = originalContent;
+                alert('Failed to save changes');
+            }
+        } catch (error) {
+            console.error('Error saving message:', error);
+            if (contentEl) contentEl.textContent = originalContent;
+        }
+
+        // Reload to ensure consistency
+        loadMessages(TASK_ID);
+    }, 100);
 }
 
 // Legacy editMessage function removed as it is replaced by saveEdit logic
@@ -563,8 +716,13 @@ if (document.getElementById('task-list')) {
     document.addEventListener('DOMContentLoaded', () => {
         initTheme();
         checkUser();
+        checkAIConfig();
+        initViewMode();
     });
 } else {
     // For task page, we need to init theme too (it's called in task.html DOMContentLoaded but let's be safe)
-    document.addEventListener('DOMContentLoaded', initTheme);
+    document.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        checkAIConfig();
+    });
 }
