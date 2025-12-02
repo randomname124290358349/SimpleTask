@@ -41,9 +41,23 @@
         <div class="main-content">
             <div class="top-bar">
                 <h1 class="page-title">My Tasks</h1>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+
                     <input type="text" placeholder="Search tasks..." oninput="handleSearch(this.value)"
                         style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 14px;">
+
+                    <div class="view-toggles"
+                        style="display: flex; gap: 5px; background: rgba(0,0,0,0.05); padding: 3px; border-radius: 8px; margin-right: 10px;">
+                        <button class="btn-icon view-btn" onclick="setViewMode('card')" title="Card View"
+                            style="width: 32px; height: 32px; border-radius: 6px; font-size: 14px;">
+                            ⊞
+                        </button>
+                        <button class="btn-icon view-btn" onclick="setViewMode('table')" title="Table View"
+                            style="width: 32px; height: 32px; border-radius: 6px; font-size: 14px;">
+                            ≣
+                        </button>
+                    </div>
+
                     <button class="btn btn-secondary" onclick="toggleDarkMode()" id="theme-toggle">🌙</button>
                     <button class="btn" onclick="openCreateTaskModal()">
                         <span>+</span> New Task
@@ -81,6 +95,11 @@
             <div class="input-group">
                 <textarea id="task-desc" placeholder="Description (optional)" rows="4"></textarea>
             </div>
+            <div class="input-group" id="ai-toggle-container"
+                style="display: none; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <input type="checkbox" id="use-ai-toggle" checked onchange="toggleAIPreference(this.checked)">
+                <label for="use-ai-toggle" style="cursor: pointer; user-select: none;">✨ Enhance with AI</label>
+            </div>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
                 <button class="btn btn-secondary" onclick="closeCreateTaskModal()">Cancel</button>
                 <button class="btn" id="create-task-btn" onclick="createTask()">Create Task</button>
@@ -94,7 +113,6 @@
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
 
-            // Update page title based on selection
             const title = element.innerText.includes('Open') ? 'My Tasks' : 'Completed Tasks';
             document.querySelector('.page-title').innerText = title;
         }
