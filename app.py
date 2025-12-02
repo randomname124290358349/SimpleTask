@@ -31,6 +31,10 @@ def task_detail(task_id):
 
 # API Routes
 
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    return jsonify({"ai_available": bool(openai_client)})
+
 @app.route('/api/identify', methods=['POST'])
 def identify():
     data = request.json
@@ -46,9 +50,10 @@ def tasks():
         
         title = data['title']
         description = data.get('description', '')
+        use_ai = data.get('use_ai', True)
         
         # OpenAI Rewrite for Task
-        if openai_client:
+        if openai_client and use_ai:
             try:
                 response = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
@@ -148,9 +153,10 @@ def messages(task_id):
         data = request.json
         user_name = session.get('user_name', 'Anonymous')
         content = data['content']
+        use_ai = data.get('use_ai', True)
         
         # OpenAI Rewrite
-        if openai_client:
+        if openai_client and use_ai:
             try:
                 response = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
