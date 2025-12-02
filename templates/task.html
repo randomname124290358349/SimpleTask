@@ -68,7 +68,15 @@
                         <input type="text" id="message-input" placeholder="Type a message..."
                             onkeypress="handleEnter(event)"
                             style="background: var(--card-background); box-shadow: var(--shadow-sm);">
-                        <div style="text-align: right; margin-top: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <div id="ai-toggle-container" style="display: none; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="use-ai-toggle" checked
+                                    onchange="toggleAIPreference(this.checked)">
+                                <label for="use-ai-toggle"
+                                    style="cursor: pointer; user-select: none; font-size: 14px; color: var(--text-secondary);">✨
+                                    Enhance with AI</label>
+                            </div>
                             <button class="btn" onclick="sendMessage()">Send</button>
                         </div>
                     </div>
