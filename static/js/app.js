@@ -1,728 +1,87 @@
-// Global state
-let currentUser = localStorage.getItem('simpletask_user');
-let currentTaskCreatedAt = null;
-
-let currentTaskCompletedAt = null;
-let activeMessageEdits = {}; // Track active edits to prevent auto-refresh
-
-// Helper to parse SQLite UTC strings ("YYYY-MM-DD HH:MM:SS") as UTC
-function parseUTCDate(dateString) {
-    if (!dateString) return null;
-    // Replace space with T and append Z to indicate UTC
-    // Example: "2023-10-27 10:00:00" -> "2023-10-27T10:00:00Z"
-    return new Date(dateString.replace(' ', 'T') + 'Z');
-}
-
-// --- User Identification ---
-
-function checkUser() {
-    if (!currentUser) {
-        if (document.getElementById('id-modal')) {
-            document.getElementById('id-modal').classList.add('active');
-        } else {
-            // If on task page and no user, redirect or show modal if possible
-            // For simplicity, we might just redirect to index if no user found, 
-            // but let's try to handle it gracefully or assume index check happened.
-            window.location.href = '/';
-        }
-    } else {
-        // Sync with session
-        fetch('/api/identify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: currentUser })
-        });
-
-        const display = document.getElementById('display-name');
-        if (display) {
-            display.textContent = `Hi, ${currentUser}`;
-            document.getElementById('user-info').style.display = 'flex';
-        }
-
-        // Load initial data if on index
-        if (document.getElementById('task-list')) {
-            loadTasks('open');
-        }
-    }
-}
-
-function identifyUser() {
-    const input = document.getElementById('username-input');
-    const name = input.value.trim();
-    if (name) {
-        currentUser = name;
-        localStorage.setItem('simpletask_user', name);
-        document.getElementById('id-modal').classList.remove('active');
-        checkUser();
-    }
-}
-
-function logoutUser() {
-    localStorage.removeItem('simpletask_user');
-    currentUser = null;
-    document.getElementById('user-info').style.display = 'none';
-    window.location.reload();
-}
-
-// --- AI Management ---
-
-let aiAvailable = false;
-
-async function checkAIConfig() {
-    try {
-        const res = await fetch('/api/config');
-        const data = await res.json();
-        aiAvailable = data.ai_available;
-
-        if (aiAvailable) {
-            const containers = document.querySelectorAll('#ai-toggle-container');
-            containers.forEach(el => el.style.display = 'flex');
-
-            // Restore preference
-            const savedPref = localStorage.getItem('simpletask_use_ai');
-            const useAI = savedPref === null ? true : (savedPref === 'true');
-
-            document.querySelectorAll('#use-ai-toggle').forEach(el => el.checked = useAI);
-        }
-    } catch (e) {
-        console.error('Failed to check AI config', e);
-    }
-}
-
-function toggleAIPreference(enabled) {
-    localStorage.setItem('simpletask_use_ai', enabled);
-}
-
-function getAIPreference() {
-    if (!aiAvailable) return false;
-    const savedPref = localStorage.getItem('simpletask_use_ai');
-    return savedPref === null ? true : (savedPref === 'true');
-}
-
-// --- Task Management ---
-
-function openCreateTaskModal() {
-    document.getElementById('create-task-modal').classList.add('active');
-}
-
-function closeCreateTaskModal() {
-    document.getElementById('create-task-modal').classList.remove('active');
-    document.getElementById('task-title').value = '';
-    document.getElementById('task-desc').value = '';
-}
-
-async function createTask() {
-    const titleInput = document.getElementById('task-title');
-    const descInput = document.getElementById('task-desc');
-    const createBtn = document.getElementById('create-task-btn');
-
-    const title = titleInput.value.trim();
-    const desc = descInput.value.trim();
-
-    if (!title) return;
-
-    // UI Feedback
-    const originalBtnText = createBtn.innerHTML;
-    createBtn.disabled = true;
-
-    const useAI = getAIPreference();
-    if (useAI) {
-        createBtn.innerHTML = '<span class="pulsing">✨</span> Improving & Creating...';
-    } else {
-        createBtn.innerHTML = 'Creating...';
-    }
-
-    try {
-        const res = await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description: desc, use_ai: useAI })
-        });
-
-        if (res.ok) {
-            closeCreateTaskModal();
-            loadTasks('open');
-        }
-    } catch (error) {
-        console.error('Error creating task:', error);
-        alert('Failed to create task');
-    } finally {
-        createBtn.disabled = false;
-        createBtn.innerHTML = originalBtnText;
-    }
-}
-
-// Search state
-let currentSearchQuery = '';
-let searchDebounceTimer = null;
-
-function handleSearch(query) {
-    currentSearchQuery = query.trim();
-
-    // Debounce
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => {
-        loadTasks(getCurrentStatus());
-    }, 300);
-}
-
-function getCurrentStatus() {
-    // Helper to find which tab is active
-    const activeNav = document.querySelector('.nav-item.active');
-    if (activeNav && activeNav.innerText.includes('Completed')) {
-        return 'completed';
-    }
-    return 'open';
-}
-
-// --- View Mode ---
-let currentViewMode = localStorage.getItem('simpletask_view_mode') || 'card';
-
-function setViewMode(mode) {
-    currentViewMode = mode;
-    localStorage.setItem('simpletask_view_mode', mode);
-
-    // Update UI
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('onclick').includes(mode)) {
-            btn.classList.add('active');
-        }
-    });
-
-    loadTasks(getCurrentStatus());
-}
-
-function initViewMode() {
-    // Set initial active button
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('onclick').includes(currentViewMode)) {
-            btn.classList.add('active');
-        }
-    });
-}
-
-async function loadTasks(status) {
-    let url = `/api/tasks?status=${status}`;
-    if (currentSearchQuery) {
-        url += `&search=${encodeURIComponent(currentSearchQuery)}`;
-    }
-
-    const res = await fetch(url);
-    const tasks = await res.json();
-
-    const list = document.getElementById('task-list');
-    list.innerHTML = '';
-
-    // Update grid/table class
-    if (currentViewMode === 'table') {
-        list.classList.remove('task-grid');
-        list.classList.add('task-table-view');
-    } else {
-        list.classList.add('task-grid');
-        list.classList.remove('task-table-view');
-    }
-
-    if (tasks.length === 0) {
-        list.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No tasks found</div>';
-        return;
-    }
-
-    if (currentViewMode === 'table') {
-        const table = document.createElement('table');
-        table.className = 'task-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th style="text-align: left;">Title</th>
-                    <th>Status</th>
-                    <th>Created By</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        `;
-        const tbody = table.querySelector('tbody');
-
-        tasks.forEach(task => {
-            const tr = document.createElement('tr');
-            tr.onclick = () => window.location.href = `/task/${task.id}`;
-            const date = parseUTCDate(task.created_at).toLocaleDateString();
-
-            tr.innerHTML = `
-                <td>
-                    <div style="font-weight: 600; color: var(--text-primary);">${task.title}</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">${task.description ? task.description.substring(0, 50) + (task.description.length > 50 ? '...' : '') : ''}</div>
-                </td>
-                <td><span class="status-badge status-${task.status}">${task.status}</span></td>
-                <td>${task.created_by}</td>
-                <td>${date}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-        list.appendChild(table);
-    } else {
-        tasks.forEach(task => {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.onclick = () => window.location.href = `/task/${task.id}`;
-
-            const date = parseUTCDate(task.created_at).toLocaleDateString();
-            const descPreview = task.description ? task.description : 'No description';
-
-            div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                    <h3>${task.title}</h3>
-                    <div class="status-badge status-${task.status}">${task.status}</div>
-                </div>
-                <p>${descPreview}</p>
-                <div class="card-footer">
-                    <span>${task.created_by}</span>
-                    <span>${date}</span>
-                </div>
-            `;
-            list.appendChild(div);
-        });
-    }
-}
-
-async function loadTaskDetails(id) {
-    const res = await fetch(`/api/tasks/${id}`);
-    if (!res.ok) {
-        alert('Task not found');
-        window.location.href = '/';
-        return;
-    }
-    const task = await res.json();
-
-    document.getElementById('task-title').textContent = task.title;
-    document.getElementById('task-desc').textContent = task.description || '';
-    document.getElementById('task-meta').textContent = `Created by ${task.created_by} on ${parseUTCDate(task.created_at).toLocaleString()}`;
-
-    const statusBadge = document.getElementById('task-status');
-    statusBadge.textContent = task.status;
-    statusBadge.className = `status-badge status-${task.status}`;
-
-    // Timer setup
-    currentTaskCreatedAt = parseUTCDate(task.created_at);
-    currentTaskCompletedAt = task.completed_at ? parseUTCDate(task.completed_at) : null;
-    updateTimer();
-
-    // Action buttons
-    const actions = document.getElementById('task-actions');
-    if (task.status === 'open') {
-        actions.innerHTML = `<button class="btn btn-secondary" onclick="updateStatus(${id}, 'completed')">Mark as Completed</button>`;
-    } else {
-        actions.innerHTML = `<button class="btn btn-secondary" onclick="updateStatus(${id}, 'open')">Reopen Task</button>`;
-    }
-}
-
-async function updateStatus(id, status) {
-    await fetch(`/api/tasks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-    });
-    loadTaskDetails(id);
-}
-
-function openDeleteTaskModal() {
-    document.getElementById('delete-task-modal').classList.add('active');
-}
-
-function closeDeleteTaskModal() {
-    document.getElementById('delete-task-modal').classList.remove('active');
-}
-
-async function confirmDeleteTask() {
-    const res = await fetch(`/api/tasks/${TASK_ID}`, {
-        method: 'DELETE'
-    });
-
-    if (res.ok) {
-        window.location.href = '/';
-    } else {
-        alert('Failed to delete task');
-        closeDeleteTaskModal();
-    }
-}
-
-// --- Inline Edit Management ---
-
-let currentEditElement = null;
-let originalContent = '';
-
-function enableInlineEdit(elementId, type) {
-    if (currentEditElement) return; // Already editing something
-
-    const el = document.getElementById(elementId);
-    if (!el) return;
-
-    currentEditElement = elementId;
-    originalContent = el.textContent; // Save for cancel? Or just use current value
-
-    const currentText = el.textContent;
-    el.removeAttribute('onclick'); // Disable click while editing
-    el.classList.remove('editable');
-
-    if (type === 'textarea') {
-        el.innerHTML = `<textarea id="${elementId}-input" class="editable-input" rows="5" onblur="saveInlineEdit('${elementId}', 'textarea')" onkeydown="handleInlineKey(event, '${elementId}', 'textarea')">${currentText}</textarea>`;
-    } else {
-        el.innerHTML = `<input type="text" id="${elementId}-input" class="editable-input" value="${currentText}" onblur="saveInlineEdit('${elementId}', 'input')" onkeydown="handleInlineKey(event, '${elementId}', 'input')">`;
-    }
-
-    const input = document.getElementById(`${elementId}-input`);
-    input.focus();
-}
-
-function handleInlineKey(e, elementId, type) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        saveInlineEdit(elementId, type);
-    } else if (e.key === 'Escape') {
-        cancelInlineEdit(elementId, type);
-    }
-}
-
-function cancelInlineEdit(elementId, type) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-
-    el.textContent = originalContent;
-    resetInlineEditState(elementId, type);
-}
-
-async function saveInlineEdit(elementId, type) {
-    // Small delay to prevent race conditions with other events
-    setTimeout(async () => {
-        const input = document.getElementById(`${elementId}-input`);
-        if (!input) return; // Already handled?
-
-        const newVal = input.value.trim();
-
-        // Optimistic update
-        const el = document.getElementById(elementId);
-        el.textContent = newVal;
-        resetInlineEditState(elementId, type);
-
-        if (newVal === originalContent) return; // No change
-
-        // Save to backend
-        const title = elementId === 'task-title' ? newVal : document.getElementById('task-title').textContent;
-        const description = elementId === 'task-desc' ? newVal : document.getElementById('task-desc').textContent;
-
-        const res = await fetch(`/api/tasks/${TASK_ID}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description })
-        });
-
-        if (!res.ok) {
-            alert('Failed to save changes');
-            el.textContent = originalContent; // Revert
-        }
-    }, 100);
-}
-
-function resetInlineEditState(elementId, type) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-
-    el.classList.add('editable');
-    el.setAttribute('onclick', `enableInlineEdit('${elementId}', '${type}')`);
-    currentEditElement = null;
-}
-
-// --- Theme Management ---
-
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('simpletask_theme', isDark ? 'dark' : 'light');
-    updateThemeIcon();
-}
-
-function updateThemeIcon() {
-    const btn = document.getElementById('theme-toggle');
-    if (btn) {
-        const isDark = document.body.classList.contains('dark-mode');
-        btn.textContent = isDark ? '☀️' : '🌙';
-    }
-}
-
-function initTheme() {
-    const savedTheme = localStorage.getItem('simpletask_theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
-    updateThemeIcon();
-}
-
-// --- Chat Management ---
-
-async function loadMessages(taskId) {
-    const res = await fetch(`/api/tasks/${taskId}/messages`);
-    const messages = await res.json();
-
-    const list = document.getElementById('message-list');
-
-    // Check if we have a pending "improving" message
-    const pendingMsg = document.getElementById('pending-message');
-
-    const currentScroll = list.scrollTop;
-    const isNearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 100;
-
-    // Clear list but keep pending message if it exists
-    list.innerHTML = '';
-
-    messages.forEach(msg => {
-        const div = document.createElement('div');
-        const isMine = msg.user_name === currentUser;
-        div.className = `message ${isMine ? 'mine' : ''}`;
-        div.id = `msg-${msg.id}`; // Add ID for easy access
-
-        const date = parseUTCDate(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const edited = msg.is_edited ? ' (edited)' : '';
-
-        // Allow actions for ALL users
-        div.innerHTML = `
-            <div class="message-bubble">
-                <div class="message-header">
-                    <strong>${msg.user_name}</strong>
-                    <span>${date}${edited}</span>
-                </div>
-                <div class="message-content editable" id="msg-content-${msg.id}" 
-                     onclick="startEdit(${msg.id})" 
-                     title="Click to edit" 
-                     style="cursor: pointer;">${msg.content}</div>
-            </div>
-            <div class="message-actions">
-                <span class="action-link" onclick="deleteMessage(${msg.id})">Delete</span>
-            </div>
-        `;
-        list.appendChild(div);
-    });
-
-    if (pendingMsg) {
-        list.appendChild(pendingMsg);
-    }
-
-    if (isNearBottom) {
-        list.scrollTop = list.scrollHeight;
-    } else {
-        list.scrollTop = currentScroll;
-    }
-}
-
-function handleEnter(e) {
-    if (e.key === 'Enter') sendMessage();
-}
-
-async function sendMessage() {
-    const input = document.getElementById('message-input');
-    const content = input.value.trim();
-    if (!content) return;
-
-    input.value = ''; // Clear immediately
-
-    // Add temporary message bubble
-    const list = document.getElementById('message-list');
-    const tempDiv = document.createElement('div');
-    tempDiv.id = 'pending-message';
-    tempDiv.className = 'message mine';
-
-    const useAI = getAIPreference();
-    let tempContent = content;
-    if (useAI) {
-        tempContent = `<span class="pulsing">✨</span> Improving message with AI...`;
-    }
-
-    tempDiv.innerHTML = `
-        <div class="message-bubble">
-            <div class="message-header">
-                <strong>${currentUser}</strong>
-                <span>Now</span>
-            </div>
-            <div class="message-content improving-message">
-                ${tempContent}
-            </div>
-        </div>
-    `;
-    list.appendChild(tempDiv);
-    list.scrollTop = list.scrollHeight;
-
-    await fetch(`/api/tasks/${TASK_ID}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, use_ai: useAI })
-    });
-
-    // Remove pending message (loadMessages will refresh the list)
-    if (tempDiv.parentNode) {
-        tempDiv.remove();
-    }
-    loadMessages(TASK_ID);
-}
-
-// --- Message Operations ---
-
-let messageToDeleteId = null;
-
-function openDeleteMsgModal(id) {
-    messageToDeleteId = id;
-    document.getElementById('delete-msg-modal').classList.add('active');
-    document.getElementById('confirm-delete-btn').onclick = confirmDeleteMessage;
-}
-
-function closeDeleteMsgModal() {
-    document.getElementById('delete-msg-modal').classList.remove('active');
-    messageToDeleteId = null;
-}
-
-async function confirmDeleteMessage() {
-    if (!messageToDeleteId) return;
-
-    await fetch(`/api/messages/${messageToDeleteId}`, { method: 'DELETE' });
-    closeDeleteMsgModal();
-    loadMessages(TASK_ID);
-}
-
-// Wrapper for the onclick in HTML
-function deleteMessage(id) {
-    openDeleteMsgModal(id);
-}
-
-function handleMessageEditKey(e, id) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const input = document.getElementById(`edit-input-${id}`);
-        if (input) input.blur();
-    } else if (e.key === 'Escape') {
-        cancelEdit(id);
-    }
-}
-
-function startEdit(id) {
-    const contentEl = document.getElementById(`msg-content-${id}`);
-    if (!contentEl) return;
-
-    // Prevent double edit
-    if (activeMessageEdits[id]) return;
-
-    const currentContent = contentEl.textContent;
-    activeMessageEdits[id] = currentContent; // Store original content
-
-    // Lock the width to prevent collapsing
-    const currentWidth = contentEl.offsetWidth;
-    contentEl.style.width = `${currentWidth}px`;
-
-    // Inline edit interface - No buttons, just textarea
-    contentEl.innerHTML = `
-        <textarea id="edit-input-${id}" class="edit-input" rows="2" 
-            style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--accent-color); margin-bottom: 5px; font-family: inherit; font-size: inherit; resize: none;"
-            onblur="saveEdit(${id})"
-            onkeydown="handleMessageEditKey(event, ${id})">${currentContent}</textarea>
-    `;
-
-    // Focus textarea
-    setTimeout(() => {
-        const textarea = document.getElementById(`edit-input-${id}`);
-        if (textarea) {
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        }
-    }, 50);
-}
-
-function cancelEdit(id) {
-    const contentEl = document.getElementById(`msg-content-${id}`);
-    if (contentEl && activeMessageEdits[id] !== undefined) {
-        contentEl.textContent = activeMessageEdits[id];
-        contentEl.style.width = ''; // Unlock width
-        delete activeMessageEdits[id];
-    }
-}
-
-async function saveEdit(id) {
-    // Small delay to prevent race conditions
-    setTimeout(async () => {
-        const input = document.getElementById(`edit-input-${id}`);
-        if (!input) return; // Already handled (e.g. cancelled)
-
-        const newContent = input.value.trim();
-        const originalContent = activeMessageEdits[id];
-
-        // If no change or empty, revert
-        if (!newContent || newContent === originalContent) {
-            cancelEdit(id);
-            return;
-        }
-
-        // Optimistic update
-        const contentEl = document.getElementById(`msg-content-${id}`);
-        if (contentEl) {
-            contentEl.textContent = newContent;
-            contentEl.style.width = ''; // Unlock width
-        }
-
-        delete activeMessageEdits[id]; // Clear edit state
-
-        try {
-            const res = await fetch(`/api/messages/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: newContent })
-            });
-
-            if (!res.ok) {
-                // Revert on failure
-                if (contentEl) contentEl.textContent = originalContent;
-                alert('Failed to save changes');
-            }
-        } catch (error) {
-            console.error('Error saving message:', error);
-            if (contentEl) contentEl.textContent = originalContent;
-        }
-
-        // Reload to ensure consistency
-        loadMessages(TASK_ID);
-    }, 100);
-}
-
-// Legacy editMessage function removed as it is replaced by saveEdit logic
-
-
-// --- Timer ---
-
-function updateTimer() {
-    if (!currentTaskCreatedAt) return;
-
-    const now = currentTaskCompletedAt || new Date();
-    const diff = now - currentTaskCreatedAt;
-
-    const hours = Math.floor(diff / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-
-    const timerEl = document.getElementById('task-timer');
-    if (timerEl) {
-        timerEl.textContent = `${hours}h ${minutes}m ${seconds}s`;
-    }
-}
-
-// Init on index page
+import * as Utils from './modules/utils.js';
+import * as AI from './modules/ai.js';
+import * as Theme from './modules/theme.js';
+import * as Timer from './modules/timer.js';
+import * as InlineEdit from './modules/inline-edit.js';
+import * as Tasks from './modules/tasks.js';
+import * as User from './modules/user.js';
+import * as Chat from './modules/chat.js';
+
+// Expose to window for HTML onclick handlers and inline scripts
+window.checkUser = User.checkUser;
+window.identifyUser = User.identifyUser;
+window.logoutUser = User.logoutUser;
+
+window.checkAIConfig = AI.checkAIConfig;
+window.toggleAIPreference = AI.toggleAIPreference;
+window.getAIPreference = AI.getAIPreference;
+
+window.openCreateTaskModal = Tasks.openCreateTaskModal;
+window.closeCreateTaskModal = Tasks.closeCreateTaskModal;
+window.createTask = Tasks.createTask;
+window.handleSearch = Tasks.handleSearch;
+window.setViewMode = Tasks.setViewMode;
+window.loadTasks = Tasks.loadTasks;
+window.loadTaskDetails = Tasks.loadTaskDetails;
+window.updateStatus = Tasks.updateStatus;
+window.openDeleteTaskModal = Tasks.openDeleteTaskModal;
+window.closeDeleteTaskModal = Tasks.closeDeleteTaskModal;
+window.confirmDeleteTask = Tasks.confirmDeleteTask;
+
+window.enableInlineEdit = InlineEdit.enableInlineEdit;
+window.handleInlineKey = InlineEdit.handleInlineKey;
+window.saveInlineEdit = InlineEdit.saveInlineEdit;
+window.cancelInlineEdit = InlineEdit.cancelInlineEdit;
+
+window.toggleDarkMode = Theme.toggleDarkMode;
+window.updateThemeIcon = Theme.updateThemeIcon;
+window.initTheme = Theme.initTheme;
+
+window.loadMessages = Chat.loadMessages;
+window.handleEnter = Chat.handleEnter;
+window.sendMessage = Chat.sendMessage;
+window.openDeleteMsgModal = Chat.openDeleteMsgModal;
+window.closeDeleteMsgModal = Chat.closeDeleteMsgModal;
+window.confirmDeleteMessage = Chat.confirmDeleteMessage;
+window.deleteMessage = Chat.deleteMessage;
+window.handleMessageEditKey = Chat.handleMessageEditKey;
+window.startEdit = Chat.startEdit;
+window.saveEdit = Chat.saveEdit;
+window.cancelEdit = Chat.cancelEdit;
+window.activeMessageEdits = Chat.getActiveMessageEdits();
+
+window.updateTimer = Timer.updateTimer;
+
+// Init logic
 if (document.getElementById('task-list')) {
-    document.addEventListener('DOMContentLoaded', () => {
-        initTheme();
-        checkUser();
-        checkAIConfig();
-        initViewMode();
-    });
+    // We can't rely on DOMContentLoaded here because if this is a module, 
+    // it might run after DOMContentLoaded if deferred? 
+    // Actually modules are deferred, so they run after parsing, before DOMContentLoaded fires?
+    // "defer" scripts execute before DOMContentLoaded.
+    // So we can still listen to it, or just run if ready.
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            Theme.initTheme();
+            User.checkUser();
+            AI.checkAIConfig();
+            Tasks.initViewMode();
+        });
+    } else {
+        Theme.initTheme();
+        User.checkUser();
+        AI.checkAIConfig();
+        Tasks.initViewMode();
+    }
 } else {
-    // For task page, we need to init theme too (it's called in task.html DOMContentLoaded but let's be safe)
-    document.addEventListener('DOMContentLoaded', () => {
-        initTheme();
-        checkAIConfig();
-    });
+    // For task page
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            Theme.initTheme();
+            AI.checkAIConfig();
+        });
+    } else {
+        Theme.initTheme();
+        AI.checkAIConfig();
+    }
 }

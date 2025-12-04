@@ -112,10 +112,10 @@
     </div>
 
     <script>
-        const TASK_ID = {{ task_id }};
+        window.TASK_ID = {{ task_id }};
     </script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script>
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script type="module">
         // Load task details on init
         document.addEventListener('DOMContentLoaded', () => {
             checkUser();
