@@ -9,6 +9,14 @@
 </head>
 
 <body>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('simpletask_theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
     <div class="app-container">
         <!-- Sidebar -->
         <div class="sidebar">
