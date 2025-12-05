@@ -104,9 +104,13 @@
                 <textarea id="task-desc" placeholder="Description (optional)" rows="4"></textarea>
             </div>
             <div class="input-group" id="ai-toggle-container"
-                style="display: none; align-items: center; gap: 10px; margin-bottom: 20px;">
-                <input type="checkbox" id="use-ai-toggle" checked onchange="toggleAIPreference(this.checked)">
-                <label for="use-ai-toggle" style="cursor: pointer; user-select: none;">✨ Enhance with AI</label>
+                style="display: none; align-items: center; gap: 12px; margin-bottom: 20px;">
+                <label class="apple-switch">
+                    <input type="checkbox" id="use-ai-toggle" checked onchange="toggleAIPreference(this.checked)">
+                    <span class="slider"></span>
+                </label>
+                <span style="font-size: 14px; font-weight: 500; color: var(--text-primary); user-select: none;">✨
+                    Enhance with AI</span>
             </div>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
                 <button class="btn btn-secondary" onclick="closeCreateTaskModal()">Cancel</button>

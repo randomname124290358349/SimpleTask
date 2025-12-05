@@ -78,12 +78,15 @@
                             style="background: var(--card-background); box-shadow: var(--shadow-sm);">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                            <div id="ai-toggle-container" style="display: none; align-items: center; gap: 8px;">
-                                <input type="checkbox" id="use-ai-toggle" checked
-                                    onchange="toggleAIPreference(this.checked)">
-                                <label for="use-ai-toggle"
-                                    style="cursor: pointer; user-select: none; font-size: 14px; color: var(--text-secondary);">✨
-                                    Enhance with AI</label>
+                            <div id="ai-toggle-container" style="display: none; align-items: center; gap: 12px;">
+                                <label class="apple-switch">
+                                    <input type="checkbox" id="use-ai-toggle" checked
+                                        onchange="toggleAIPreference(this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                                <span
+                                    style="font-size: 14px; font-weight: 500; color: var(--text-secondary); user-select: none;">✨
+                                    Enhance with AI</span>
                             </div>
                             <button class="btn" onclick="sendMessage()">Send</button>
                         </div>
