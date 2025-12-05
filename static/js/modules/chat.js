@@ -26,7 +26,10 @@ export async function loadMessages(taskId) {
         div.className = `message ${isMine ? 'mine' : ''}`;
         div.id = `msg-${msg.id}`; // Add ID for easy access
 
-        const date = parseUTCDate(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateObj = parseUTCDate(msg.created_at);
+        const date = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+            ' ' +
+            dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const edited = msg.is_edited ? ' (edited)' : '';
 
         // Allow actions for ALL users
