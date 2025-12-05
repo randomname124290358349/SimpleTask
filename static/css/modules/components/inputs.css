@@ -1,0 +1,29 @@
+/* Inputs */
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid transparent;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: var(--font-stack);
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode textarea {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    background: var(--card-background);
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.input-group {
+    margin-bottom: 20px;
+}

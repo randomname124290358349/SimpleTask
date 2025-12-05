@@ -1,0 +1,58 @@
+/* Task Table */
+.task-table-view {
+    display: block;
+}
+
+.task-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card-background);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.task-table th {
+    padding: 15px 20px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+body.dark-mode .task-table th {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    vertical-align: middle;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+body.dark-mode .task-table td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-table tr:last-child td {
+    border-bottom: none;
+}
+
+.task-table tr {
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.task-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .task-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
