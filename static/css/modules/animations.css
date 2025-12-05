@@ -1,0 +1,72 @@
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Pulsing Animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.pulsing {
+    animation: pulse 1.5s infinite ease-in-out;
+    display: inline-block;
+}
+
+/* Editable Elements */
+.editable {
+    transition: background-color 0.2s;
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    /* Offset padding */
+    cursor: pointer;
+}
+
+.editable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .editable:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.editable-input {
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
+}

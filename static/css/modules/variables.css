@@ -1,0 +1,47 @@
+:root {
+    /* Apple System Colors */
+    --background-color: #f5f5f7;
+    /* Light gray background */
+    --sidebar-background: rgba(245, 245, 247, 0.8);
+    --card-background: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --accent-color: #0071e3;
+    /* Apple Blue */
+    --accent-hover: #0077ed;
+    --danger-color: #ff3b30;
+    /* Apple Red */
+    --success-color: #34c759;
+    /* Apple Green */
+    --warning-color: #ff9f0a;
+    /* Apple Orange */
+
+    /* Layout & Spacing */
+    --sidebar-width: 280px;
+    --header-height: 60px;
+    --border-radius: 12px;
+    --border-radius-lg: 18px;
+
+    /* Effects */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+    --backdrop-blur: blur(20px);
+
+    --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body.dark-mode {
+    --background-color: #000000;
+    --sidebar-background: rgba(28, 28, 30, 0.8);
+    --card-background: #1c1c1e;
+    --text-primary: #f5f5f7;
+    --text-secondary: #98989d;
+    --glass-bg: rgba(28, 28, 30, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
