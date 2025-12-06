@@ -21,6 +21,7 @@ window.closeCreateTaskModal = Tasks.closeCreateTaskModal;
 window.createTask = Tasks.createTask;
 window.handleSearch = Tasks.handleSearch;
 window.setViewMode = Tasks.setViewMode;
+window.toggleSortOrder = Tasks.toggleSortOrder;
 window.loadTasks = Tasks.loadTasks;
 window.loadTaskDetails = Tasks.loadTaskDetails;
 window.updateStatus = Tasks.updateStatus;

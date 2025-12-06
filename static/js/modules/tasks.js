@@ -3,6 +3,7 @@ import { getAIPreference } from './ai.js';
 import { setTimerState, updateTimer } from './timer.js';
 
 let currentViewMode = localStorage.getItem('simpletask_view_mode') || 'card';
+let currentSortOrder = 'desc';
 let currentSearchQuery = '';
 let searchDebounceTimer = null;
 
@@ -91,6 +92,11 @@ export function setViewMode(mode) {
     loadTasks(getCurrentStatus());
 }
 
+export function toggleSortOrder() {
+    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    loadTasks(getCurrentStatus());
+}
+
 export function initViewMode() {
     // Set initial active button
     document.querySelectorAll('.view-btn').forEach(btn => {
@@ -128,15 +134,27 @@ export async function loadTasks(status) {
     }
 
     if (currentViewMode === 'table') {
+        // Sort tasks
+        tasks.sort((a, b) => {
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
+            return currentSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+
         const table = document.createElement('table');
         table.className = 'task-table';
+
+        const sortIcon = currentSortOrder === 'asc' ? '↑' : '↓';
+
         table.innerHTML = `
             <thead>
                 <tr>
                     <th style="text-align: left;">Title</th>
                     <th>Status</th>
                     <th>Created By</th>
-                    <th>Date</th>
+                    <th style="cursor: pointer; user-select: none;" onclick="toggleSortOrder()">
+                        Date ${sortIcon}
+                    </th>
                 </tr>
             </thead>
             <tbody></tbody>
