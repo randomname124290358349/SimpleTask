@@ -1,5 +1,6 @@
 /* Inputs */
 input[type="text"],
+input[type="password"],
 textarea {
     width: 100%;
     padding: 14px;
@@ -14,11 +15,13 @@ textarea {
 }
 
 body.dark-mode input[type="text"],
+body.dark-mode input[type="password"],
 body.dark-mode textarea {
     background: rgba(255, 255, 255, 0.1);
 }
 
 input[type="text"]:focus,
+input[type="password"]:focus,
 textarea:focus {
     background: var(--card-background);
     box-shadow: 0 0 0 2px var(--accent-color);

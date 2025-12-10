@@ -1,4 +1,4 @@
-import { getCurrentUser } from './user.js';
+import { getCurrentUser, getApiKey } from './user.js';
 import { getAIPreference } from './ai.js';
 import { parseUTCDate } from './utils.js';
 
@@ -6,7 +6,9 @@ let activeMessageEdits = {};
 let messageToDeleteId = null;
 
 export async function loadMessages(taskId) {
-    const res = await fetch(`/api/tasks/${taskId}/messages`);
+    const res = await fetch(`/api/tasks/${taskId}/messages`, {
+        headers: { 'X-API-Key': getApiKey() }
+    });
     const messages = await res.json();
 
     const list = document.getElementById('message-list');
@@ -101,7 +103,10 @@ export async function sendMessage() {
 
     await fetch(`/api/tasks/${window.TASK_ID}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': getApiKey()
+        },
         body: JSON.stringify({ content, use_ai: useAI })
     });
 
@@ -126,7 +131,10 @@ export function closeDeleteMsgModal() {
 export async function confirmDeleteMessage() {
     if (!messageToDeleteId) return;
 
-    await fetch(`/api/messages/${messageToDeleteId}`, { method: 'DELETE' });
+    await fetch(`/api/messages/${messageToDeleteId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Key': getApiKey() }
+    });
     closeDeleteMsgModal();
     loadMessages(window.TASK_ID);
 }
@@ -213,7 +221,10 @@ export async function saveEdit(id) {
         try {
             const res = await fetch(`/api/messages/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': getApiKey()
+                },
                 body: JSON.stringify({ content: newContent })
             });
 

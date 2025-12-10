@@ -1,8 +1,12 @@
+
 let aiAvailable = false;
 
 export async function checkAIConfig() {
     try {
-        const res = await fetch('/api/config');
+        const apiKey = localStorage.getItem('simpletask_api_key');
+        const res = await fetch('/api/config', {
+            headers: { 'X-API-Key': apiKey }
+        });
         const data = await res.json();
         aiAvailable = data.ai_available;
 

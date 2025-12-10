@@ -26,11 +26,15 @@ SimpleTask is a lightweight, local task management application designed for smal
     git clone https://github.com/randomname124290358349/SimpleTask.git
     ```
 
-3.  **Configuration (optional)**:
+3.  **Configuration**:
     *   Create a `.env` file in the root directory or rename `.example.env`.
-    *   Add your OpenAI API Key:
+    *   Add your OpenAI API Key (optional):
         ```
         OPENAI_API_KEY=sk-...
+        ```
+    *   Create your api key for the app (needed!):
+        ```
+        API_KEY=my-default-key
         ```
 
 4.  **Run the Application**:

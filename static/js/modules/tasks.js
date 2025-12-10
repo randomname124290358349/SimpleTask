@@ -1,6 +1,7 @@
 import { parseUTCDate } from './utils.js';
 import { getAIPreference } from './ai.js';
 import { setTimerState, updateTimer } from './timer.js';
+import { getApiKey, logoutUser } from './user.js';
 
 let currentViewMode = localStorage.getItem('simpletask_view_mode') || 'card';
 let currentSortOrder = 'desc';
@@ -41,7 +42,10 @@ export async function createTask() {
     try {
         const res = await fetch('/api/tasks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': getApiKey()
+            },
             body: JSON.stringify({ title, description: desc, use_ai: useAI })
         });
 
@@ -113,7 +117,14 @@ export async function loadTasks(status) {
         url += `&search=${encodeURIComponent(currentSearchQuery)}`;
     }
 
-    const res = await fetch(url);
+    const res = await fetch(url, {
+        headers: { 'X-API-Key': getApiKey() }
+    });
+
+    if (res.status === 401) {
+        logoutUser();
+        return;
+    }
     const tasks = await res.json();
 
     const list = document.getElementById('task-list');
@@ -204,7 +215,9 @@ export async function loadTasks(status) {
 }
 
 export async function loadTaskDetails(id) {
-    const res = await fetch(`/api/tasks/${id}`);
+    const res = await fetch(`/api/tasks/${id}`, {
+        headers: { 'X-API-Key': getApiKey() }
+    });
     if (!res.ok) {
         alert('Task not found');
         window.location.href = '/';
@@ -239,7 +252,10 @@ export async function loadTaskDetails(id) {
 export async function updateStatus(id, status) {
     await fetch(`/api/tasks/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': getApiKey()
+        },
         body: JSON.stringify({ status })
     });
     loadTaskDetails(id);
@@ -255,7 +271,8 @@ export function closeDeleteTaskModal() {
 
 export async function confirmDeleteTask() {
     const res = await fetch(`/api/tasks/${window.TASK_ID}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'X-API-Key': getApiKey() }
     });
 
     if (res.ok) {

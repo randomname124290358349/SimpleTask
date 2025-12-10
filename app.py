@@ -12,6 +12,7 @@ app.secret_key = os.urandom(24)
 
 # Initialize OpenAI client
 api_key = os.getenv("OPENAI_API_KEY")
+SERVER_API_KEY = os.getenv("API_KEY")
 openai_client = OpenAI(api_key=api_key) if api_key else None
 
 if not api_key:
@@ -20,6 +21,21 @@ if not api_key:
 # Initialize DB on start
 init_db()
 db = DBHandler()
+
+@app.before_request
+def require_api_key():
+    if request.path.startswith('/api/'):
+        if request.method == 'OPTIONS':
+            return
+        
+        if not SERVER_API_KEY:
+            # Secure by default: If server isn't configured, deny access or Warn loudly
+            print("CRITICAL: API_KEY not set in environment!")
+            return jsonify({"error": "Configuration Error", "message": "Server API Key not configured"}), 500
+        
+        client_key = request.headers.get('X-API-Key')
+        if not client_key or client_key != SERVER_API_KEY:
+            return jsonify({"error": "Unauthorized", "message": "Invalid API Key"}), 401
 
 @app.route('/')
 def index():

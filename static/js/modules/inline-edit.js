@@ -1,3 +1,5 @@
+import { getApiKey } from './user.js';
+
 let currentEditElement = null;
 let originalContent = '';
 
@@ -62,7 +64,10 @@ export async function saveInlineEdit(elementId, type) {
 
         const res = await fetch(`/api/tasks/${window.TASK_ID}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': getApiKey()
+            },
             body: JSON.stringify({ title, description })
         });
 
