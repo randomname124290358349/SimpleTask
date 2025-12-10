@@ -1,7 +1,9 @@
 import sqlite3
+import os
 from datetime import datetime
 
-DB_NAME = "simpletask.db"
+# Allow configuring DB path via environment variable (useful for Docker)
+DB_NAME = os.environ.get("DB_PATH", "simpletask.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_NAME)

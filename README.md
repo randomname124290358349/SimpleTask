@@ -45,8 +45,37 @@ SimpleTask is a lightweight, local task management application designed for smal
     ```
     uv run pythonw launch_as_system_tray.pyw
     ```
-    Access the app at `http://localhost:5000`.
-    Access the application from other computers on your LAN at `http://<your-lan-ip>:5000` (check the console output for the IP).
+    Access the app at `http://localhost:3333`.
+    Access the application from other computers on your LAN at `http://<your-lan-ip>:3333` (check the console output for the IP).
+
+## Running with Docker (Alternative)
+
+If you prefer to run the application using Docker, follow these steps:
+
+1.  **Prerequisites**:
+    *   Docker and Docker Compose installed on your system.
+
+2.  **Configuration**:
+    *   Create a `.env` file in the root directory (same as above):
+        ```
+        OPENAI_API_KEY=sk-...
+        API_KEY=my-default-key
+        ```
+
+3.  **Build and Run**:
+    ```bash
+    docker compose up -d --build
+    ```
+
+4.  **Access the Application**:
+    *   Open `http://localhost:3333` in your browser.
+
+5.  **View Logs**:
+    ```bash
+    docker compose logs -f
+    ```
+
+> **Note**: The database is persisted in a Docker volume called `simpletask_data`. Your data will be preserved across container restarts.
 
 ## Technologies
 
