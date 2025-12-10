@@ -15,6 +15,16 @@ api_key = os.getenv("OPENAI_API_KEY")
 SERVER_API_KEY = os.getenv("API_KEY")
 openai_client = OpenAI(api_key=api_key) if api_key else None
 
+# AI Prompts (configurable via .env with defaults)
+TASK_REWRITE_PROMPT = os.getenv(
+    "TASK_REWRITE_PROMPT",
+    'You are a helpful assistant. Rewrite the title and the description of the following task in a more professional, clear, and concise way. Return the result as a JSON object with the keys "title" and "description".'
+)
+MESSAGE_REWRITE_PROMPT = os.getenv(
+    "MESSAGE_REWRITE_PROMPT",
+    "You are a helpful assistant who rewrites messages so they become more professional and clear. Preserve the meaning but improve the tone and grammar. Return ONLY the rewritten text."
+)
+
 if not api_key:
     print("WARNING: OPENAI_API_KEY not found in .env. AI features will be disabled.")
 
@@ -73,7 +83,7 @@ def tasks():
                 response = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
-                        {"role": "system", "content": "You are a helpful assistant. Rewrite the title and the description of the following task in a more professional, clear, and concise way. Return the result as a JSON object with the keys “title” and “description”."},
+                        {"role": "system", "content": TASK_REWRITE_PROMPT},
                         {"role": "user", "content": f"Title: {title}\nDescription: {description}"}
                     ],
                     response_format={"type": "json_object"}
@@ -135,7 +145,7 @@ def messages(task_id):
                 response = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
-                        {"role": "system", "content": "You are a helpful assistant who rewrites messages so they become more professional and clear. Preserve the meaning but improve the tone and grammar. Return ONLY the rewritten text."},
+                        {"role": "system", "content": MESSAGE_REWRITE_PROMPT},
                         {"role": "user", "content": content}
                     ]
                 )

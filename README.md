@@ -36,6 +36,11 @@ SimpleTask is a lightweight, local task management application designed for smal
         ```
         API_KEY=my-default-key
         ```
+    *   (Optional) Customize AI prompts:
+        ```
+        TASK_REWRITE_PROMPT=Your custom prompt for rewriting tasks...
+        MESSAGE_REWRITE_PROMPT=Your custom prompt for rewriting messages...
+        ```
 
 4.  **Run the Application**:
     ```bash
